@@ -54,6 +54,8 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             #   - `output`: Computed loss, a single floating point number
             ##################################################################
             loss = 0
+            loss = torch.nn.CrossEntropyLoss()(output, target)
+        
             ##################################################################
             #                          END OF YOUR CODE                      #
             ##################################################################

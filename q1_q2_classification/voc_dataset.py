@@ -64,20 +64,27 @@ class VOCDataset(Dataset):
             # https://docs.python.org/3/library/xml.etree.elementtree.html)
             # Loop through the `tree` to find all objects in the image
             #######################################################################
-
+		
             #  The class vector should be a 20-dimensional vector with class[i] = 1 if an object of class i is present in the image and 0 otherwise
             class_vec = torch.zeros(20)
 
             # The weight vector should be a 20-dimensional vector with weight[i] = 0 iff an object of class i has the `difficult` attribute set to 1 in the XML file and 1 otherwise
             # The difficult attribute specifies whether a class is ambiguous and by setting its weight to zero it does not contribute to the loss during training 
             weight_vec = torch.ones(20)
-
+            root = tree.getroot()
+            for obj in root.findall('object'):
+                class_name = obj.find('name').text
+                class_index = self.get_class_index(class_name)
+                class_vec[class_index] = 1
+                
+                # if difficult is not None and int (difficult.text) == 1:
+                #     weight_vec[class_index] = 0
+	    	
             ######################################################################
             #                            END OF YOUR CODE                        #
             ######################################################################
 
             label_list.append((class_vec, weight_vec))
-
         return label_list
 
     def get_random_augmentations(self):
@@ -113,6 +120,8 @@ class VOCDataset(Dataset):
         trans = transforms.Compose([
             transforms.Resize(self.size),
             *self.get_random_augmentations(),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomResizedCrop(size=(224, 224), antialias=True),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.457, 0.407], std=[0.229, 0.224, 0.225]),
         ])
