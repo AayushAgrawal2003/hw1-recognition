@@ -43,6 +43,7 @@ class SimpleCNN(nn.Module):
         # Sequential is another way of chaining the layers.
         self.fc1 = nn.Sequential(*get_fc(self.flat_dim, 128, 'none'))
         self.fc2 = nn.Sequential(*get_fc(128, num_classes, 'none'))
+        
 
     def forward(self, x):
         """

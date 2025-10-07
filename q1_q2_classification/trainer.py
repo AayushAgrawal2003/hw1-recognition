@@ -53,9 +53,11 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             # Function Outputs:
             #   - `output`: Computed loss, a single floating point number
             ##################################################################
-            loss = 0
-            loss = torch.nn.CrossEntropyLoss()(output, target)
-        
+            
+            d = torch.sum(torch.exp(output-torch.max(output)), dim=1, keepdims=True)
+            probs = torch.exp(output-torch.max(output)) / d
+            loss = -torch.sum(wgt * torch.log(probs) * target, dim=1).mean()
+            
             ##################################################################
             #                          END OF YOUR CODE                      #
             ##################################################################

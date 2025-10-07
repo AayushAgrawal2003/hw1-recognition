@@ -76,9 +76,6 @@ class VOCDataset(Dataset):
                 class_name = obj.find('name').text
                 class_index = self.get_class_index(class_name)
                 class_vec[class_index] = 1
-                
-                # if difficult is not None and int (difficult.text) == 1:
-                #     weight_vec[class_index] = 0
 	    	
             ######################################################################
             #                            END OF YOUR CODE                        #
@@ -99,10 +96,16 @@ class VOCDataset(Dataset):
         # change and you will have to write the correct value of `flat_dim`
         # in line 46 in simple_cnn.py
         ######################################################################
-            return transforms.Compose([
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomResizedCrop(self.size, antialias=True)
-        ])
+        if self.split == 'trainval':
+            return [
+                transforms.RandomHorizontalFlip(p=0.5),
+                transforms.RandomResizedCrop(self.size, antialias=True),
+                transforms.RandomRotation(degrees=10),
+                
+            ]
+        else:
+            # validation/test: deterministic preprocessing
+            return [transforms.CenterCrop(self.size)]
         # pass
         ######################################################################
         #                            END OF YOUR CODE                        #
@@ -122,8 +125,8 @@ class VOCDataset(Dataset):
         img = Image.open(fpath)
 
         trans = transforms.Compose([
-            transforms.Resize(self.size),
-            self.get_random_augmentations(),
+            transforms.Resize((self.size,self.size)),
+            *self.get_random_augmentations(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.457, 0.407], std=[0.229, 0.224, 0.225]),
         ])

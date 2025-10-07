@@ -17,7 +17,8 @@ class ResNet(nn.Module):
         ##################################################################
         # TODO: Define a FC layer here to process the features
         ##################################################################
-        
+        for params in self.resnet.parameters():
+            params.requires_grad= False
         self.resnet.fc = nn.Linear(self.resnet.fc.in_features,num_classes)
         pass
         ##################################################################
@@ -50,13 +51,13 @@ if __name__ == "__main__":
     ##################################################################
     args = ARGS(
         epochs=50,
-        inp_size=64,
+        inp_size=224,
         use_cuda=True,
-        val_every=70,
-        lr= 0.01,
-        batch_size=64,
-        step_size=5,
-        gamma=0.1,
+        val_every=1000,
+        lr= 5e-6,
+        batch_size=20,
+        step_size=20,
+        gamma=0.9,
     )
     ##################################################################
     #                          END OF YOUR CODE                      #
@@ -82,3 +83,9 @@ if __name__ == "__main__":
     # trains model using your training code and reports test map
     test_ap, test_map = trainer.train(args, model, optimizer, scheduler)
     print('test map:', test_map)
+    
+    
+    torch.save({
+        'model_states':model.state_dict(),
+        'optimizer_states':optimizer.state_dict(),
+        }, 'Q2.pth')
