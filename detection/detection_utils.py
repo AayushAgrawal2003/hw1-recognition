@@ -226,13 +226,18 @@ def fcos_make_centerness_targets(deltas: torch.Tensor):
     #   (max(left, right) * max(top, bottom))
     # )
     ##########################################################################
-    background_idx = torch.where((deltas == -1).all(dim=1))[0].tolist()
-    lr = torch.stack((deltas[:, 0], deltas[:, 2]), dim=1)
-    tb = torch.stack((deltas[:, 1], deltas[:, 3]), dim=1)
-    centerness = torch.sqrt((torch.min(lr, dim=1)[0] * torch.min(tb, dim=1)[0]) / (torch.max(lr, dim=1)[0] * torch.max(tb, dim=1)[0]))
-    if background_idx:
-        for i in background_idx:
-            centerness[i] = -1
+    bg_indices = torch.where((deltas == -1).all(dim=1))[0].tolist()
+
+    lr_pairs = torch.stack((deltas[:, 0], deltas[:, 2]), dim=1)
+    tb_pairs = torch.stack((deltas[:, 1], deltas[:, 3]), dim=1)
+
+    centerness = torch.sqrt(
+        (torch.min(lr_pairs, dim=1).values * torch.min(tb_pairs, dim=1).values) /
+        (torch.max(lr_pairs, dim=1).values * torch.max(tb_pairs, dim=1).values)
+    )
+
+    if bg_indices:
+        centerness[bg_indices] = -1
     ##########################################################################
     #                             END OF YOUR CODE                           #
     ##########################################################################
@@ -276,15 +281,17 @@ def get_fpn_location_coords(
         ##################################################################–####
         # TODO: Implement logic to get location co-ordinates below.          #
         ######################################################################
-        
-        x = torch.arange(feat_shape[2])
-        y = torch.arange(feat_shape[3])
-        xmap = level_stride//2 + x*level_stride
-        ymap = level_stride//2 + y*level_stride
-        ymap, xmap = torch.meshgrid(xmap, ymap, indexing='ij')
-        
-        location_coords[level_name] = torch.stack((xmap.flatten(), ymap.flatten()), dim=-1).to(device, dtype=dtype)
-        
+        x_range = torch.arange(feat_shape[2])
+        y_range = torch.arange(feat_shape[3])
+
+        x_center = (x_range * level_stride) + level_stride // 2
+        y_center = (y_range * level_stride) + level_stride // 2
+
+        grid_y, grid_x = torch.meshgrid(x_center, y_center, indexing='ij')
+
+        location_coords[level_name] = torch.stack(
+            (grid_x.flatten(), grid_y.flatten()), dim=-1
+        ).to(device=device, dtype=dtype)
         ######################################################################
         #                             END OF YOUR CODE                       #
         ######################################################################

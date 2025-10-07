@@ -113,6 +113,19 @@ class DetectorBackboneWithFPN(nn.Module):
         fpn_feats["p3"] = self.fpn_params['output_conv_c3'](self.fpn_params['lateral_conv_c3'](backbone_feats['c3']))
         fpn_feats["p4"] = self.fpn_params['output_conv_c4'](self.fpn_params['lateral_conv_c4'](backbone_feats['c4']))
         fpn_feats["p5"] = self.fpn_params['output_conv_c5'](self.fpn_params['lateral_conv_c5'](backbone_feats['c5']))
+        c3_lat = self.fpn_params['lateral_conv_c3'](backbone_feats['c3'])
+        c4_lat = self.fpn_params['lateral_conv_c4'](backbone_feats['c4'])
+        c5_lat = self.fpn_params['lateral_conv_c5'](backbone_feats['c5'])
+
+        # 2. Build the top-down pathway
+        p5 = c5_lat
+        p4 = c4_lat + F.interpolate(p5, size=c4_lat.shape[-2:], mode="nearest")
+        p3 = c3_lat + F.interpolate(p4, size=c3_lat.shape[-2:], mode="nearest")
+
+        # 3. Apply output convolutions to get final FPN features
+        fpn_feats["p3"] = self.fpn_params['output_conv_c3'](p3)
+        fpn_feats["p4"] = self.fpn_params['output_conv_c4'](p4)
+        fpn_feats["p5"] = self.fpn_params['output_conv_c5'](p5)
         ######################################################################
         #                            END OF YOUR CODE                        #
         ######################################################################
